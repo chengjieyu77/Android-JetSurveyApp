@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "135575448980",
+    "project_id": "jetsurveyme",
+    "storage_bucket": "jetsurveyme.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:135575448980:android:44cbf583f19a13f912b381",
+        "android_client_info": {
+          "package_name": "com.example.jetsurveyme"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDM6Rt5Ukk9wrvg1k6jGREXRjoYxGQAF5s"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
