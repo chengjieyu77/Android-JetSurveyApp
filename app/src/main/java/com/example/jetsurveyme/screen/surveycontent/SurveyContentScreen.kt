@@ -1,11 +1,20 @@
 package com.example.jetsurveyme.screen.surveycontent
 
+import android.Manifest
+import android.content.pm.PackageManager
 import android.icu.util.Calendar
+import android.net.Uri
+import android.os.Build
 import android.provider.MediaStore.Audio.Radio
 import android.util.Log
 import android.widget.DatePicker
+import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -18,6 +27,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.pager.HorizontalPager
@@ -48,10 +58,12 @@ import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
@@ -59,7 +71,10 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.core.content.ContextCompat
+import androidx.core.content.FileProvider
 import androidx.navigation.NavController
+import coil.compose.rememberImagePainter
 import com.example.jetsurveyme.R
 import com.example.jetsurveyme.component.ColoredButton
 import com.example.jetsurveyme.component.ColorlessButton
@@ -68,11 +83,17 @@ import com.example.jetsurveyme.model.ComicCharacter
 import com.example.jetsurveyme.model.ListItem
 import com.example.jetsurveyme.model.Question
 import com.example.jetsurveyme.navigation.JetsurveyScreens
+import com.example.jetsurveyme.util.createImageFile
 import com.example.jetsurveyme.util.formatCurrentDate
+import com.google.firebase.BuildConfig
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
 import java.util.Date
+import java.util.Objects
 
+@RequiresApi(Build.VERSION_CODES.O)
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun SurveyContentScreen(navController: NavController,
@@ -86,6 +107,7 @@ fun SurveyContentScreen(navController: NavController,
         5
     })
     val coroutineScope = rememberCoroutineScope()
+
 
 
     Column {
@@ -114,7 +136,9 @@ fun SurveyContentScreen(navController: NavController,
         BottomButtons(pagerState = pagerState,
             modifier = modifier,
             question1 = question1,
-            question2 = question2)
+            question2 = question2){
+            navController.navigate(JetsurveyScreens.FinishScreen.name)
+        }
     }
 
 }
@@ -124,14 +148,15 @@ fun SurveyContentScreen(navController: NavController,
 fun BottomButtons(pagerState: PagerState,
                   modifier: Modifier = Modifier,
                   question1: Question<List<ListItem>>,
-                  question2: Question<List<ComicCharacter>>) {
+                  question2: Question<List<ComicCharacter>>,
+                  onDone: () -> Unit = {}) {
     val coroutineScope = rememberCoroutineScope()
     val question1Valid = question1.answer.filter {
         it.checked == true
     }.isNotEmpty()
-//    val question2Valid = question2.answer.filter {
-//        it.selected == true
-//    }.isNotEmpty()
+    val question2Valid = question2.answer.filter {
+        it.selected == true
+    }.isNotEmpty()
     when(pagerState.settledPage){
         0 ->ColoredButton(text = "Next", enabled = question1Valid){
             coroutineScope.launch {
@@ -195,7 +220,7 @@ fun BottomButtons(pagerState: PagerState,
                 }
             }
             ColoredButton(text = "Done", width = 1f){
-                //navigate to last screen
+                onDone()
             }
         }
     }
@@ -204,6 +229,33 @@ fun BottomButtons(pagerState: PagerState,
 
 @Composable
 fun Question5(modifier: Modifier = Modifier){
+    val context = LocalContext.current
+    val file = context.createImageFile()
+    val uri = FileProvider.getUriForFile(
+        Objects.requireNonNull(context),
+        "com.example.jetsurveyme"+".provider",file
+    )
+
+    var capturedImageUri by remember {
+        mutableStateOf<Uri>(Uri.EMPTY)
+    }
+
+    val cameraLauncher =
+        rememberLauncherForActivityResult(ActivityResultContracts.TakePicture()) {
+            capturedImageUri = uri
+        }
+
+    val permissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) {
+        if (it){
+            Toast.makeText(context, "Permission Granted", Toast.LENGTH_SHORT).show()
+            cameraLauncher.launch(uri)
+        }else{
+            Toast.makeText(context, "Permission Denied", Toast.LENGTH_SHORT).show()
+        }
+    }
+
     Column(
         modifier = modifier.padding(horizontal = 16.dp)
     ) {
@@ -218,36 +270,73 @@ fun Question5(modifier: Modifier = Modifier){
                     color = Color.Black.copy(0.8f),
                     shape = RoundedCornerShape(8.dp)
                 )
-                .height(270.dp),
+                .height(400.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.SpaceEvenly
         ) {
-            Image(painter = painterResource(id = R.drawable.ic_selfie_light), 
-                contentDescription = "selfie picture",
-                modifier = modifier.padding(vertical = 16.dp))
+            if (capturedImageUri.path?.isNotEmpty() == true) {
+
+                    Image(
+                        modifier = Modifier
+                            .padding(16.dp, 8.dp)
+                            .width(220.dp),
+                        painter = rememberImagePainter(capturedImageUri),
+                        contentDescription = null
+                    )
+
+
+
+            }else{
+                Image(painter = painterResource(id = R.drawable.ic_selfie_light),
+                    contentDescription = "selfie picture",
+                    modifier = modifier
+                        .padding(vertical = 16.dp)
+                        .width(220.dp))
+            }
+
             
             Row(
-                modifier = modifier.fillMaxWidth()
+                modifier = modifier
+                    .padding(vertical = 16.dp)
                     .clickable {
-
+                        val permissionCheckResult =
+                            ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA)
+                        if (permissionCheckResult == PackageManager.PERMISSION_GRANTED) {
+                            cameraLauncher.launch(uri)
+                        } else {
+                            // Request a permission
+                            permissionLauncher.launch(Manifest.permission.CAMERA)
+                        }
                     },
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.Center
             ) {
-                Icon(painter = painterResource(id = R.drawable.baseline_add_a_photo_black_36),
-                    contentDescription = "add a photo",
-                    tint = MaterialTheme.colorScheme.primary)
-                Text(text = "ADD PHOTO",
-                    color = MaterialTheme.colorScheme.primary,
-                    modifier = modifier.padding(start = 4.dp))
+                if (capturedImageUri.path?.isNotEmpty() == true){
+                    Icon(painter = painterResource(id = R.drawable.ic_swap_horiz) ,
+                        contentDescription = "add a photo",
+                        tint = MaterialTheme.colorScheme.primary)
+                    Text(text = "RETAKE PHOTO",
+                        color = MaterialTheme.colorScheme.primary,
+                        modifier = modifier.padding(start = 4.dp))
+                }else{
+                    Icon(painter = painterResource(id = R.drawable.baseline_add_a_photo_black_36),
+                        contentDescription = "add a photo",
+                        tint = MaterialTheme.colorScheme.primary)
+                    Text(text = "ADD PHOTO",
+                        color = MaterialTheme.colorScheme.primary,
+                        modifier = modifier.padding(start = 4.dp))
+                }
+
             }
         }
     }
 }
 
 @Composable
-fun Question4(modifier: Modifier = Modifier){
-    var  sliderPosition by remember { mutableFloatStateOf(0f) }
+fun Question4(modifier: Modifier = Modifier,
+              onSliderFocusedChanged:(Boolean) -> Unit = {}){
+    var  sliderPosition by remember { mutableFloatStateOf(25f) }
+
     Column(
         modifier = modifier.padding(horizontal = 16.dp)
     ) {
@@ -280,6 +369,7 @@ fun Question4(modifier: Modifier = Modifier){
 
 }
 
+@RequiresApi(Build.VERSION_CODES.O)
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun Question3(modifier: Modifier = Modifier){
@@ -303,15 +393,15 @@ fun Question3(modifier: Modifier = Modifier){
     mCalendar.time = Date()
 
     val currentDate = formatCurrentDate()
-    val sdf = SimpleDateFormat("EEE, MMM d")
+    val formatter = DateTimeFormatter.ofPattern("EEE, MMM d")
 
     val mDate = remember{ mutableStateOf(currentDate) }
 
     val mDatePickerDialog = android.app.DatePickerDialog(
         mContext,
         { _: DatePicker, mYear: Int, mMonth: Int, mDayOfMonth: Int ->
-            mDate.value =
-                "$mDayOfMonth/${mMonth + 1}/$mYear"
+            mDate.value = LocalDate.of(mYear,mMonth+1,mDayOfMonth).format(formatter)
+                //"$mDayOfMonth/${mMonth + 1}/$mYear"
         }, mYear, mMonth, mDay
     )
 
@@ -373,10 +463,13 @@ fun Question2(modifier: Modifier = Modifier,
     val answerList = question2.answer
     val (selectedOption,onOptionSelected) = remember{
         mutableStateOf(ComicCharacter(R.drawable.spark,R.string.comic1))
+        //mutableStateOf(ComicCharacter(-1,-1))
     }
     val selected = remember{
         mutableStateOf(false)
     }
+
+    val scope = rememberCoroutineScope()
 
 
     Column(
@@ -392,7 +485,10 @@ fun Question2(modifier: Modifier = Modifier,
                     selected = selectedOption == comicCharacter,
                     ){
                     onOptionSelected(comicCharacter)
-                    comicCharacter.selected = selectedOption == comicCharacter
+                    scope.launch {
+                        comicCharacter.selected = selectedOption == comicCharacter
+                    }
+
                 }
                 Spacer(modifier = modifier.height(16.dp))
             }
@@ -420,11 +516,15 @@ fun Question2Item(comicCharacter: ComicCharacter,
                 onClick = onClick,
                 role = Role.RadioButton
             )
-            .padding(horizontal = 8.dp),
+            .background(
+                color = if (selected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surface,
+                shape = RoundedCornerShape(8.dp)
+            ),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
         Row(
+            modifier = modifier.padding(start = 8.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Image(painter = painterResource(id = comicCharacter.image),
@@ -438,7 +538,8 @@ fun Question2Item(comicCharacter: ComicCharacter,
         }
 
         RadioButton(selected = selected,
-            onClick = onClick)
+            onClick = onClick,
+            modifier = modifier.padding(end = 8.dp))
     }
 
 }
@@ -495,15 +596,20 @@ fun Question1Item(choice:String,
                 onClick = { onCheckedChange.invoke(checked) },
                 role = Role.Checkbox
             )
-            .padding(horizontal = 8.dp),
+            .background(
+                color = if (checked) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surface,
+                shape = RoundedCornerShape(8.dp)
+            ),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
         Text(text = choice,
             style = MaterialTheme.typography.titleMedium,
-            color = MaterialTheme.colorScheme.onSurface.copy(0.8f))
+            color = MaterialTheme.colorScheme.onSurface.copy(0.8f),
+            modifier = modifier.padding(start = 16.dp))
 
-        Checkbox(checked = checked, onCheckedChange = onCheckedChange)
+        Checkbox(checked = checked, onCheckedChange = onCheckedChange,
+            modifier = modifier.padding(end = 8.dp))
 
     }
 }
@@ -564,7 +670,8 @@ fun QuestionTitle(modifier: Modifier = Modifier,
             .fillMaxWidth()
             .height(100.dp),
         shape = RoundedCornerShape(8.dp),
-        tonalElevation = 8.dp,
+        tonalElevation = 1.dp,
+        color = Color.LightGray.copy(0.3f)
         ) {
         Row(
             modifier = modifier.fillMaxWidth(),
