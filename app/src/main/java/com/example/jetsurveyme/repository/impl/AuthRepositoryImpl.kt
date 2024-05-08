@@ -1,5 +1,6 @@
 package com.example.jetsurveyme.repository.impl
 
+import android.util.Log
 import com.example.jetsurveyme.repository.AuthRepository
 import com.example.jetsurveyme.util.Resource
 import com.google.firebase.auth.AuthResult
@@ -32,5 +33,21 @@ class AuthRepositoryImpl @Inject constructor(
             emit(Resource.Error(it.message.toString()))
         }
     }
+
+    fun checkIfEmailExists(email:String){
+
+        firebaseAuth.signInWithEmailAndPassword(email,"")
+            .addOnFailureListener { task->
+                if(task.message == "email-already-in-use"){
+                    Log.d("failure listener","${task.message} email exists")
+                }else{
+                    Log.d("failure listener","${task.message} email does not exist")
+                }
+
+            }
+
+
+    }
+
 
 }

@@ -14,4 +14,6 @@
     <string name="comic2">Lenz</string>
     <string name="comic3">Bug of Chaos</string>
     <string name="comic4">Frag</string>
+
+    <string name="agreeService">By continuing, you agree to our Terms of Service. We\'ll handle your data according to our Privacy Policy. </string>
 </resources>

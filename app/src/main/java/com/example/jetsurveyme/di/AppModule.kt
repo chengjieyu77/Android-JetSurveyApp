@@ -3,6 +3,7 @@ package com.example.jetsurveyme.di
 import com.example.jetsurveyme.repository.AuthRepository
 import com.example.jetsurveyme.repository.impl.AuthRepositoryImpl
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -21,4 +22,8 @@ object AppModule {
     fun providesRepositoryImpl(firebaseAuth: FirebaseAuth):AuthRepository{
         return AuthRepositoryImpl(firebaseAuth)
     }
+
+    @Provides
+    @Singleton
+    fun providesFirestore() = FirebaseFirestore.getInstance()
 }

@@ -538,7 +538,7 @@ fun Question2Item(comicCharacter: ComicCharacter,
         }
 
         RadioButton(selected = selected,
-            onClick = onClick,
+            onClick = null,
             modifier = modifier.padding(end = 8.dp))
     }
 
@@ -608,7 +608,7 @@ fun Question1Item(choice:String,
             color = MaterialTheme.colorScheme.onSurface.copy(0.8f),
             modifier = modifier.padding(start = 16.dp))
 
-        Checkbox(checked = checked, onCheckedChange = onCheckedChange,
+        Checkbox(checked = checked, onCheckedChange = null,
             modifier = modifier.padding(end = 8.dp))
 
     }

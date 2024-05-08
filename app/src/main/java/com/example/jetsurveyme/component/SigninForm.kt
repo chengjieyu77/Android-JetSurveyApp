@@ -59,6 +59,7 @@ fun EmailInput(
                                  color = Color.Red.copy(0.8f))
                          }
         },
+        singleLine = true,
         keyboardOptions = KeyboardOptions(
             keyboardType = KeyboardType.Email,
             imeAction = imeAction,
@@ -75,6 +76,8 @@ fun PasswordInput(modifier: Modifier,
                   enabled: Boolean,
                   trailingIcon: @Composable () -> Unit,
                   passwordVisibility: MutableState<Boolean>,
+                  isConfirmInput:Boolean = false,
+                  isPasswordConfirmed:Boolean = false,
                   imeAction: ImeAction = ImeAction.Done,
                   onAction: KeyboardActions = KeyboardActions.Default) {
     val visualTransformation = if (passwordVisibility.value) VisualTransformation.None else
@@ -87,12 +90,22 @@ fun PasswordInput(modifier: Modifier,
         },
         label = { Text(text = labelId)},
         trailingIcon = trailingIcon,
+        isError = !isPasswordConfirmed && passwordState.value.isNotEmpty() && isConfirmInput,
+        supportingText = {
+                         if (!isPasswordConfirmed && passwordState.value.isNotEmpty() && isConfirmInput){
+                             Text(text = "Password does not accord to each other",
+                                 style = MaterialTheme.typography.labelMedium,
+                                 color = Color.Red.copy(0.8f))
+
+                         }
+        },
         enabled = enabled,
         //singleLine = true,
         //textStyle = androidx.compose.ui.text.TextStyle(fontSize = 18.sp),
         modifier = modifier
             .fillMaxWidth()
             .padding(horizontal = 16.dp, vertical = 8.dp),
+        singleLine = true,
         keyboardOptions = KeyboardOptions(
             keyboardType = KeyboardType.Password,
             imeAction = imeAction

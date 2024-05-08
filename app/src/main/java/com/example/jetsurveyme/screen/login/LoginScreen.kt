@@ -40,6 +40,7 @@ import com.example.jetsurveyme.util.isEmailValid
 fun LoginScreen(
     navController: NavController,
     modifier: Modifier = Modifier,
+    loginViewModel: LoginViewModel = viewModel(),
     email: MutableState<String>
 ){
     //val emailObserved = signinViewModel.email.ob
@@ -64,7 +65,10 @@ fun LoginScreen(
             onAction = {navController.navigate(JetsurveyScreens.SigninScreen.name)},
             emailSignIn = {
                 //signinViewModel.restoreEmail(email = email.value)
-                navController.navigate(JetsurveyScreens.SigninScreen.name)}){
+                loginViewModel.checkIfEmailExists(email.value,
+                    toSignIn = { navController.navigate(JetsurveyScreens.SigninScreen.name) },
+                    toSignUp = {navController.navigate(JetsurveyScreens.SignUpScreen.name)})
+                }){
             navController.navigate(JetsurveyScreens.SurveyContentScreen.name)
         }
     }

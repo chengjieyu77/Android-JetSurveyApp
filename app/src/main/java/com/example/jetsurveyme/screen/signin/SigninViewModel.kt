@@ -7,12 +7,14 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.jetsurveyme.model.MUser
 import com.example.jetsurveyme.model.SignInState
 import com.example.jetsurveyme.repository.AuthRepository
 import com.example.jetsurveyme.util.Resource
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.auth
 import com.google.firebase.auth.ktx.auth
+import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.ktx.Firebase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.channels.Channel
@@ -32,11 +34,14 @@ class SigninViewModel @Inject constructor(
     val _signInState = Channel<SignInState>()
     val signInState = _signInState.receiveAsFlow()
 
+
+
     fun loginUser(email:String,password:String) = viewModelScope.launch{
         repository.loginUser(email,password).collect{result->
             when(result){
                 is Resource.Success -> {
                     _signInState.send(SignInState(isSuccess = "Sign in Success"))
+
                 }
                 is Resource.Loading ->{
                     _signInState.send(SignInState(isLoading = true))
@@ -53,6 +58,7 @@ class SigninViewModel @Inject constructor(
             when(result){
                 is Resource.Success -> {
                     _signInState.send(SignInState(isSuccess = "Register success"))
+                    createUser(email)
                 }
                 is Resource.Loading -> {
                     _signInState.send(SignInState(isLoading = true))
@@ -63,6 +69,16 @@ class SigninViewModel @Inject constructor(
             }
 
         }
+    }
+
+    private fun createUser(email:String){
+        val userId = auth.currentUser?.uid
+        val user = MUser(id=null,
+            userId = userId.toString(),
+            email = email)
+
+        FirebaseFirestore.getInstance().collection("users")
+            .add(user)
     }
 
 //    private var _email =
