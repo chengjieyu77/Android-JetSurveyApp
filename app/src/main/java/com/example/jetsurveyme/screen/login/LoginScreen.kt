@@ -1,5 +1,6 @@
 package com.example.jetsurveyme.screen.login
 
+import android.util.Log
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -11,19 +12,24 @@ import androidx.compose.foundation.layout.ime
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.material3.Icon
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -32,16 +38,22 @@ import com.example.jetsurveyme.R
 import com.example.jetsurveyme.component.ColoredButton
 import com.example.jetsurveyme.component.ColorlessButton
 import com.example.jetsurveyme.component.EmailInput
+import com.example.jetsurveyme.component.EmailInputSecond
 import com.example.jetsurveyme.navigation.JetsurveyScreens
 import com.example.jetsurveyme.screen.signin.SigninViewModel
 import com.example.jetsurveyme.util.isEmailValid
+import com.example.jetsurveyme.widget.EmailState
+import com.example.jetsurveyme.widget.EmailStateSaver
+import com.example.jetsurveyme.widget.TextFieldState
 
 @Composable
 fun LoginScreen(
-    navController: NavController,
+    //navController: NavController,
     modifier: Modifier = Modifier,
     loginViewModel: LoginViewModel = viewModel(),
-    email: MutableState<String>
+    emailSignInSignUp: (email: String) -> Unit,
+    onSignInAsGuest:()->Unit,
+    //email: MutableState<String>
 ){
     //val emailObserved = signinViewModel.email.ob
     val logoVisible = remember {
@@ -51,45 +63,49 @@ fun LoginScreen(
     val textFocused = rememberSaveable {
         mutableStateOf(false)
     }
+    val emailStateSecond by rememberSaveable(stateSaver = EmailStateSaver) {
+        mutableStateOf(EmailState())
+    }
+
+    var showBranding by rememberSaveable { mutableStateOf(true) }
     Column {
-        AnimatedVisibility(visible = !textFocused.value) {
+        AnimatedVisibility(visible = showBranding) {
             AppLogoAndCaption(modifier = modifier)
         }
 
         Spacer(modifier = modifier.height(50.dp))
         UserForm(modifier = modifier,
-            emailState = email,
+            emailState = emailStateSecond,
             onTextFieldFocus = {focused->
                                textFocused.value = focused
             },
-            onAction = {navController.navigate(JetsurveyScreens.SigninScreen.name)},
-            emailSignIn = {
-                //signinViewModel.restoreEmail(email = email.value)
-                loginViewModel.checkIfEmailExists(email.value,
-                    toSignIn = { navController.navigate(JetsurveyScreens.SigninScreen.name) },
-                    toSignUp = {navController.navigate(JetsurveyScreens.SignUpScreen.name)})
-                }){
-            navController.navigate(JetsurveyScreens.SurveyContentScreen.name)
+            emailSignInSignUp = emailSignInSignUp
+
+//            {email->
+//                Log.d("email signin",email)
+//                //signinViewModel.restoreEmail(email = email.value)
+//                loginViewModel.checkIfEmailExists(email,
+//                    toSignIn = { navController.navigate(JetsurveyScreens.SigninScreen.name) },
+//                    toSignUp = {navController.navigate(JetsurveyScreens.SignUpScreen.name)})
+//                }
+            ,
+            onFocusChange = {focused -> showBranding = !focused}){
+            //navController.navigate(JetsurveyScreens.SurveyContentScreen.name)
+            onSignInAsGuest()
         }
     }
 }
 
-@Preview(showBackground=true)
-@Composable
-private fun UserFormPreview(){
-    UserForm(emailState = remember {
-        mutableStateOf("")
-    })
-}
 @Composable
 fun UserForm(modifier: Modifier = Modifier,
-             emailState:MutableState<String>,
+             emailState:TextFieldState,
              onTextFieldFocus:(Boolean) -> Unit = {},
-             onAction:()->Unit={},
-             emailSignIn:()->Unit = {},
+             onFocusChange:(Boolean) ->Unit = {},
+             emailSignInSignUp:(email:String)->Unit = {},
              guestSignIn:() -> Unit = {}){
     //val email = rememberSaveable{ mutableStateOf("") }
-    val valid = isEmailValid(emailState.value)
+    //val valid = isEmailValid(emailState.value)
+
     Column(
         modifier = modifier.fillMaxWidth(),
         horizontalAlignment = Alignment.CenterHorizontally
@@ -99,17 +115,31 @@ fun UserForm(modifier: Modifier = Modifier,
             color = MaterialTheme.colorScheme.secondary.copy(0.6f),
             modifier = modifier.padding(vertical = 4.dp))
 
-        EmailInput(email = emailState,
-            emailValid = valid,
-            onTextFieldFocus = onTextFieldFocus,
-            onAction = KeyboardActions {
-                if (valid) onAction.invoke() else return@KeyboardActions
-            })
+        val onSubmit = {
+            if (emailState.isValid){
+                emailSignInSignUp(emailState.text)
+            }else{
+                emailState.enableShowErrors()
+            }
+        }
+        onFocusChange(emailState.isFocused)
+        EmailInputSecond(
+            emailState = emailState,
+            imeAction = ImeAction.Next,
+            onAction = onSubmit
+        )
+
+//        EmailInput(email = emailState,
+//            emailValid = valid,
+//            onTextFieldFocus = onTextFieldFocus,
+//            onAction = KeyboardActions {
+//                if (valid) onAction.invoke() else return@KeyboardActions
+//            })
 
         ColoredButton(text = "Continue",
             width = 1f,
-            enabled = valid){
-            emailSignIn.invoke()
+            ){
+            onSubmit.invoke()
         }
 
         OrDivider()
@@ -140,7 +170,8 @@ fun OrDivider(modifier: Modifier = Modifier) {
 
 @Preview(showBackground = true)
 @Composable
-fun AppLogoAndCaption(modifier:Modifier = Modifier) {
+fun AppLogoAndCaption(modifier:Modifier = Modifier,
+                      lightTheme:Boolean = LocalContentColor.current.luminance()<0.5f) {
     Column(
     modifier = modifier
         .fillMaxWidth()
@@ -149,7 +180,7 @@ fun AppLogoAndCaption(modifier:Modifier = Modifier) {
     ) {
         Box( ){
 
-            Icon(painter = painterResource(id = R.drawable.ic_logo_light),
+            Icon(painter = painterResource(id = if (lightTheme) R.drawable.ic_logo_light else R.drawable.ic_logo_dark),
                 contentDescription = "app logo",
                 tint = Color.Unspecified)
         }
@@ -159,4 +190,12 @@ fun AppLogoAndCaption(modifier:Modifier = Modifier) {
             color = MaterialTheme.colorScheme.onSurface,
             modifier = modifier.padding(vertical = 16.dp))
     }
+}
+
+@Preview(showBackground=true)
+@Composable
+private fun UserFormPreview(){
+    UserForm(emailState = remember {
+        EmailState()
+    })
 }

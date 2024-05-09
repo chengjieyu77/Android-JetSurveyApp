@@ -1,10 +1,16 @@
 package com.example.jetsurveyme.component
 
 import android.util.Patterns
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
@@ -17,12 +23,60 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
+import com.example.jetsurveyme.R
+import com.example.jetsurveyme.widget.EmailState
+import com.example.jetsurveyme.widget.TextFieldState
 
+
+@Composable
+fun EmailInputSecond(
+    emailState:TextFieldState = remember { EmailState() },
+    imeAction: ImeAction = ImeAction.Next,
+    onAction: ()->Unit
+    ){
+    OutlinedTextField(
+        value = emailState.text,
+        onValueChange = { emailState.text = it },
+        label = {Text(text = "Email", style = MaterialTheme.typography.bodyMedium)},
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp)
+            .onFocusChanged { focusState ->
+                emailState.onFocusChange(focusState.isFocused)
+                if (!focusState.isFocused) {
+                    emailState.enableShowErrors()
+                }
+            },
+        textStyle = MaterialTheme.typography.bodyMedium,
+        isError = emailState.showErrors(),
+        keyboardOptions = KeyboardOptions.Default.copy(
+            imeAction = imeAction,
+            keyboardType = KeyboardType.Email
+        ),
+        keyboardActions = KeyboardActions(
+            onDone = {
+                onAction()
+            }
+        ),
+        singleLine = true,
+        supportingText = {emailState.getError()?.let { error -> TextFieldError(textError = error) }})
+}
+
+@Composable
+fun TextFieldError(textError: String) {
+        Row(modifier = Modifier.fillMaxWidth()) {
+            Spacer(modifier = Modifier.width(16.dp))
+                Text(text = textError,
+                    modifier = Modifier.fillMaxWidth(),
+                    color = MaterialTheme.colorScheme.error)
+        }
+}
 
 @Composable
 fun EmailInput(
@@ -43,7 +97,7 @@ fun EmailInput(
             .fillMaxWidth()
             .padding(horizontal = 16.dp, vertical = 8.dp)
             .onFocusChanged { state ->
-                if (lastFocusState != state.isFocused){
+                if (lastFocusState != state.isFocused) {
                     onTextFieldFocus(state.isFocused)
                 }
                 lastFocusState = state.isFocused
@@ -74,7 +128,6 @@ fun PasswordInput(modifier: Modifier,
                   passwordState: MutableState<String>,
                   labelId: String,
                   enabled: Boolean,
-                  trailingIcon: @Composable () -> Unit,
                   passwordVisibility: MutableState<Boolean>,
                   isConfirmInput:Boolean = false,
                   isPasswordConfirmed:Boolean = false,
@@ -89,7 +142,16 @@ fun PasswordInput(modifier: Modifier,
             passwordState.value = it
         },
         label = { Text(text = labelId)},
-        trailingIcon = trailingIcon,
+        trailingIcon ={
+            IconButton(onClick = { passwordVisibility.value = !passwordVisibility.value }) {
+                // Please provide localized description for accessibility services
+                val description = if (passwordVisibility.value) "Show password" else "Hide password"
+                if (passwordVisibility.value) Icon(painter = painterResource(id = R.drawable.visible), contentDescription = description ,
+                    modifier = Modifier.size(25.dp))
+                else Icon(painter = painterResource(id = R.drawable.hide) , contentDescription = description,
+                    modifier = Modifier.size(25.dp))
+            }
+        },
         isError = !isPasswordConfirmed && passwordState.value.isNotEmpty() && isConfirmInput,
         supportingText = {
                          if (!isPasswordConfirmed && passwordState.value.isNotEmpty() && isConfirmInput){
@@ -100,7 +162,6 @@ fun PasswordInput(modifier: Modifier,
                          }
         },
         enabled = enabled,
-        //singleLine = true,
         //textStyle = androidx.compose.ui.text.TextStyle(fontSize = 18.sp),
         modifier = modifier
             .fillMaxWidth()
@@ -111,7 +172,6 @@ fun PasswordInput(modifier: Modifier,
             imeAction = imeAction
         ),
         visualTransformation = visualTransformation,
-        //trailingIcon = {PasswordVisibility(passwordVisibility = passwordVisibility)},
         keyboardActions = onAction,
 
 

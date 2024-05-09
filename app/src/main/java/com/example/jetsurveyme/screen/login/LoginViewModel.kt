@@ -3,6 +3,7 @@ package com.example.jetsurveyme.screen.login
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import com.example.jetsurveyme.model.MUser
+import com.example.jetsurveyme.widget.TextFieldState
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.ktx.auth
 import com.google.firebase.firestore.FirebaseFirestore
@@ -12,14 +13,21 @@ import com.google.firebase.ktx.Firebase
 class LoginViewModel (): ViewModel(){
     private val auth: FirebaseAuth = Firebase.auth
     val db = Firebase.firestore
-    fun checkIfEmailExists(email:String,toSignIn:()->Unit = {},toSignUp:()->Unit = {}){
 
-       val list =  auth.fetchSignInMethodsForEmail(email)
+
+    fun checkIfEmailExists(email:String,
+                           toSignIn:(email:String)->Unit = {},
+                           toSignUp:(email:String)->Unit = {}){
+
+       //val list =  auth.fetchSignInMethodsForEmail(email)
+
         if (email.contains("signup")){
-            toSignUp()
+            toSignUp(email)
         }else{
-            toSignIn()
+            toSignIn(email)
         }
+
+
 
 //        FirebaseFirestore.getInstance().collection("users")
 //            .whereEqualTo("email",email)

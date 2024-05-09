@@ -1,5 +1,6 @@
 package com.example.jetsurveyme.screen.signup
 
+import android.util.Log
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -42,8 +43,11 @@ import com.example.jetsurveyme.screen.signin.UserFormSignIn
 @Composable
 fun SignUpScreen(navController: NavController,
                  modifier: Modifier = Modifier,
-                 email: MutableState<String>,
+                 email: String,
                  signinViewModel: SigninViewModel = hiltViewModel()){
+//    val currentRoute = navController.currentBackStackEntry?.destination?.route
+//    Log.d("current route",currentRoute.toString())
+
     Scaffold(
         topBar = {
             AppTopBar(title = "Create account",
@@ -51,7 +55,7 @@ fun SignUpScreen(navController: NavController,
         }
     ) {paddingValues->
         Column(modifier = modifier.padding(paddingValues = paddingValues)) {
-            UserFormSignUp(emailFromWelcome =email.value ){email,password->
+            UserFormSignUp(emailFromWelcome =email ){email,password->
                 signinViewModel.registerUser(email,password)
             }
 
@@ -74,6 +78,9 @@ fun UserFormSignUp(
     emailFromWelcome:String,
     onDone: (String,String) -> Unit = {email,password ->}
 ){
+
+
+
     val email = rememberSaveable{ mutableStateOf(emailFromWelcome) }
     val password = rememberSaveable { mutableStateOf("") }
     val confirmPassword = rememberSaveable { mutableStateOf("") }
@@ -110,16 +117,6 @@ fun UserFormSignUp(
             passwordState = password,
             labelId = "Password",
             enabled = !loading,
-            trailingIcon = {
-                IconButton(onClick = { passwordVisibility.value = !passwordVisibility.value }) {
-                    // Please provide localized description for accessibility services
-                    val description = if (passwordVisibility.value) "Show password" else "Hide password"
-                    if (passwordVisibility.value) Icon(painter = painterResource(id = R.drawable.visible), contentDescription = description ,
-                        modifier = Modifier.size(25.dp))
-                    else Icon(painter = painterResource(id = R.drawable.hide) , contentDescription = description,
-                        modifier = Modifier.size(25.dp))
-                }
-            },
             passwordVisibility =passwordVisibility,
             imeAction = ImeAction.Next,
             onAction = KeyboardActions{
@@ -134,18 +131,7 @@ fun UserFormSignUp(
             passwordState = confirmPassword,
             labelId = "Confirm Password",
             isPasswordConfirmed = confirmValid,
-
             enabled = !loading,
-            trailingIcon = {
-                IconButton(onClick = { passwordVisibility.value = !passwordVisibility.value }) {
-                    // Please provide localized description for accessibility services
-                    val description = if (passwordVisibility.value) "Show password" else "Hide password"
-                    if (passwordVisibility.value) Icon(painter = painterResource(id = R.drawable.visible), contentDescription = description ,
-                        modifier = Modifier.size(25.dp))
-                    else Icon(painter = painterResource(id = R.drawable.hide) , contentDescription = description,
-                        modifier = Modifier.size(25.dp))
-                }
-            },
             passwordVisibility =passwordVisibility,
             isConfirmInput = true,
             onAction = KeyboardActions{

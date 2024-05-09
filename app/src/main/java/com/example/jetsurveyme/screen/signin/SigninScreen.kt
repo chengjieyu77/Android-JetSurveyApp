@@ -56,8 +56,10 @@ fun SigninScreen(
     modifier: Modifier = Modifier,
     navController: NavController,
     signinViewModel: SigninViewModel = hiltViewModel(),
-    email: MutableState<String>
+    email: String
 ){
+//    val currentRoute = navController.currentBackStackEntry?.destination?.route
+//    Log.d("current route",currentRoute.toString())
     val showLoginForm = rememberSaveable() {
         mutableStateOf(true)
     }
@@ -73,7 +75,7 @@ fun SigninScreen(
         Column(modifier = modifier.padding(paddingValues)) {
             if (showLoginForm.value){
                 UserFormSignIn(
-                    emailFromWelcome = email.value,
+                    emailFromWelcome = email,
                     //emailFromWelcome = signinViewModel.getEmail()
                             onForgetClicked = {}
                 ){email,password ->
@@ -84,7 +86,7 @@ fun SigninScreen(
                 }
             }else{
                 UserFormSignIn(
-                    emailFromWelcome = email.value
+                    emailFromWelcome = email
                     //emailFromWelcome = signinViewModel.getEmail()
 
                 ){email,password ->
@@ -166,16 +168,7 @@ fun UserFormSignIn(
             passwordState = password,
             labelId = "Password",
             enabled = !loading,
-            trailingIcon = {
-                IconButton(onClick = { passwordVisibility.value = !passwordVisibility.value }) {
-                    // Please provide localized description for accessibility services
-                    val description = if (passwordVisibility.value) "Show password" else "Hide password"
-                    if (passwordVisibility.value) Icon(painter = painterResource(id = R.drawable.visible), contentDescription = description ,
-                        modifier = Modifier.size(25.dp))
-                    else Icon(painter = painterResource(id = R.drawable.hide) , contentDescription = description,
-                        modifier = Modifier.size(25.dp))
-                }
-            },
+            //trailingIcon = {},
             passwordVisibility =passwordVisibility,
             onAction = KeyboardActions{
                 if(!valid) return@KeyboardActions
