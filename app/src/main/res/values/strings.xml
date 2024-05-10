@@ -15,5 +15,15 @@
     <string name="comic3">Bug of Chaos</string>
     <string name="comic4">Frag</string>
 
+    <string name="multiChoice1">Read</string>
+    <string name="multiChoice2">Work out</string>
+    <string name="multiChoice3">Draw</string>
+    <string name="multiChoice4">Play video games</string>
+    <string name="multiChoice5">Dances</string>
+    <string name="multiChoice6">Read</string>
+    <string name="multiChoice7">Read</string>
+    <string name="multiChoice8">Read</string>
+    <string name="multiChoice9">Read</string>
+
     <string name="agreeService">By continuing, you agree to our Terms of Service. We\'ll handle your data according to our Privacy Policy. </string>
 </resources>

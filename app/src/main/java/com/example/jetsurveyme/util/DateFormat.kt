@@ -1,12 +1,32 @@
 package com.example.jetsurveyme.util
 
 import java.text.SimpleDateFormat
+import java.util.Calendar
 import java.util.Date
 
 fun formatCurrentDate():String{
     val timeStamp = System.currentTimeMillis()
     val sdf = SimpleDateFormat("EEE, MMM d")
     val date = Date(timeStamp.toLong() )
+    return sdf.format(date)
+}
+
+/**
+ * Returns the start of today in milliseconds
+ */
+fun getDefaultDateInMillis(): Long {
+    val cal = Calendar.getInstance()
+    val year = cal.get(Calendar.YEAR)
+    val month = cal.get(Calendar.MONTH)
+    val date = cal.get(Calendar.DATE)
+    cal.clear()
+    cal.set(year, month, date)
+    return cal.timeInMillis
+}
+
+fun formatDate(timestamp:Long?):String{
+    val sdf = SimpleDateFormat("EEE, MMM d")
+    val date = timestamp?.let { Date(it) }
     return sdf.format(date)
 }
 
