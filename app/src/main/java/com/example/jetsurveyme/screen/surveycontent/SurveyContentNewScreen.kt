@@ -281,7 +281,7 @@ fun Question2New(modifier: Modifier = Modifier,
             possibleAnswers.forEach{superHero ->
                 val selected = superHero == selectedHero
 
-                    Question2ItemNew(
+                Question2ItemNew(
                         text = superHero.name,
                         imageId = superHero.image,
                         selected = selected,
